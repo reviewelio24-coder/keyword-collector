@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>키워드 수집 대시보드</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Noto Sans KR', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            },
+            colors: {
+              naver: '#03C75A',
+              daum: '#3B82F6',
+              google: '#EA4335',
+            },
+          },
+        },
+      };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <header class="mb-6 sm:mb-8">
+        <p class="text-sm font-medium text-slate-500">Keyword Harvester</p>
+        <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mt-1">키워드 수집 현황 & 블로그 글감</h1>
+        <p class="text-slate-500 mt-2 text-sm sm:text-base">
+          포털 3사 세대별 키워드를 확인하고, 글감 프롬프트를 바로 복사하세요.
+        </p>
+      </header>
+
+      <section id="summary" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <article class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+          <p class="text-sm text-slate-500">총 수집 키워드</p>
+          <p id="stat-total" class="text-3xl font-bold mt-2">-</p>
+        </article>
+        <article class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+          <p class="text-sm text-slate-500">포털별 수집</p>
+          <div id="stat-portals" class="flex flex-wrap gap-2 mt-3"></div>
+        </article>
+        <article class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+          <p class="text-sm text-slate-500">최고 기회 점수</p>
+          <p id="stat-top-score" class="text-3xl font-bold mt-2">-</p>
+        </article>
+        <article class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+          <p class="text-sm text-slate-500">최근 수집 일자</p>
+          <p id="stat-date" class="text-3xl font-bold mt-2 tracking-tight">-</p>
+        </article>
+      </section>
+
+      <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5 mb-4">
+        <div id="generation-tabs" class="flex flex-wrap gap-2 mb-4"></div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <label class="block">
+            <span class="text-xs font-medium text-slate-500">포털</span>
+            <select
+              id="portal-filter"
+              class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+            >
+              <option value="">전체</option>
+              <option value="naver">Naver</option>
+              <option value="daum">Daum</option>
+              <option value="google">Google</option>
+            </select>
+          </label>
+          <label class="block">
+            <span class="text-xs font-medium text-slate-500">최소 기회 점수</span>
+            <select
+              id="score-filter"
+              class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+            >
+              <option value="0">0점 이상</option>
+              <option value="70">70점 이상</option>
+              <option value="80">80점 이상</option>
+              <option value="90">90점 이상</option>
+            </select>
+          </label>
+          <label class="block">
+            <span class="text-xs font-medium text-slate-500">키워드 / 카테고리 검색</span>
+            <input
+              id="search-input"
+              type="search"
+              placeholder="예: 연금, IT, 재테크"
+              class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+            />
+          </label>
+        </div>
+      </section>
+
+      <section class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-4 sm:px-5 py-3 border-b border-slate-100 flex items-center justify-between gap-3">
+          <h2 class="font-semibold">키워드 목록</h2>
+          <p id="table-count" class="text-sm text-slate-500">불러오는 중...</p>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-sm">
+            <thead class="bg-slate-50 text-slate-500 text-left">
+              <tr>
+                <th class="px-4 py-3 font-medium whitespace-nowrap">포털</th>
+                <th class="px-4 py-3 font-medium">키워드</th>
+                <th class="px-4 py-3 font-medium whitespace-nowrap">타깃 세대</th>
+                <th class="px-4 py-3 font-medium whitespace-nowrap">카테고리</th>
+                <th class="px-4 py-3 font-medium whitespace-nowrap">기회 점수</th>
+                <th class="px-4 py-3 font-medium whitespace-nowrap">액션</th>
+              </tr>
+            </thead>
+            <tbody id="keyword-tbody" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+        <p id="empty-state" class="hidden px-5 py-12 text-center text-slate-500">조건에 맞는 키워드가 없습니다.</p>
+        <p id="error-state" class="hidden px-5 py-12 text-center text-red-600"></p>
+      </section>
+    </div>
+
+    <div id="toast" class="fixed bottom-5 right-5 z-50 hidden rounded-xl bg-slate-900 text-white px-4 py-3 text-sm shadow-lg"></div>
+
+    <div id="modal" class="fixed inset-0 z-40 hidden">
+      <div id="modal-backdrop" class="absolute inset-0 bg-slate-900/50"></div>
+      <div class="relative z-10 min-h-full flex items-end sm:items-center justify-center p-4">
+        <div class="w-full max-w-2xl bg-white rounded-2xl shadow-xl p-5 sm:p-6">
+          <div class="flex items-start justify-between gap-4 mb-4">
+            <div>
+              <h3 class="text-lg font-bold">블로그 글감 프롬프트</h3>
+              <p class="text-sm text-slate-500 mt-1">ChatGPT / Claude에 그대로 붙여넣으세요.</p>
+            </div>
+            <button id="modal-close" class="text-slate-400 hover:text-slate-700 text-xl leading-none" aria-label="닫기">
+              ×
+            </button>
+          </div>
+          <textarea
+            id="prompt-text"
+            readonly
+            rows="16"
+            class="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm leading-6 focus:outline-none"
+          ></textarea>
+          <div class="mt-4 flex justify-end gap-2">
+            <button
+              id="copy-prompt"
+              class="rounded-xl bg-slate-900 text-white px-4 py-2.5 text-sm font-medium hover:bg-slate-800"
+            >
+              프롬프트 복사
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const GENERATIONS = [
+        { id: '', label: '전체' },
+        { id: '10s', label: '10s' },
+        { id: '2030', label: '2030' },
+        { id: '4050', label: '4050' },
+        { id: '60s+', label: '60s+' },
+      ];
+
+      const PORTAL_META = {
+        naver: { label: 'Naver', className: 'bg-emerald-100 text-emerald-800' },
+        daum: { label: 'Daum', className: 'bg-blue-100 text-blue-800' },
+        google: { label: 'Google', className: 'bg-red-100 text-red-800' },
+      };
+
+      const GENERATION_META = {
+        '10s': { label: '10s', className: 'bg-violet-100 text-violet-800' },
+        '2030': { label: '2030', className: 'bg-sky-100 text-sky-800' },
+        '4050': { label: '4050', className: 'bg-amber-100 text-amber-800' },
+        '60s+': { label: '60s+', className: 'bg-rose-100 text-rose-800' },
+      };
+
+      const state = {
+        items: [],
+        generation: '',
+        portal: '',
+        minScore: 0,
+        query: '',
+      };
+
+      const els = {
+        tabs: document.getElementById('generation-tabs'),
+        portal: document.getElementById('portal-filter'),
+        score: document.getElementById('score-filter'),
+        search: document.getElementById('search-input'),
+        tbody: document.getElementById('keyword-tbody'),
+        empty: document.getElementById('empty-state'),
+        error: document.getElementById('error-state'),
+        tableCount: document.getElementById('table-count'),
+        total: document.getElementById('stat-total'),
+        portals: document.getElementById('stat-portals'),
+        topScore: document.getElementById('stat-top-score'),
+        date: document.getElementById('stat-date'),
+        toast: document.getElementById('toast'),
+        modal: document.getElementById('modal'),
+        prompt: document.getElementById('prompt-text'),
+      };
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll('&', '&amp;')
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;')
+          .replaceAll('"', '&quot;')
+          .replaceAll("'", '&#39;');
+      }
+
+      function searchUrl(portal, keyword) {
+        const q = encodeURIComponent(keyword);
+        if (portal === 'naver') return `https://search.naver.com/search.naver?query=${q}`;
+        if (portal === 'daum') return `https://search.daum.net/search?w=tot&q=${q}`;
+        return `https://www.google.com/search?q=${q}`;
+      }
+
+      function scoreClass(score) {
+        if (score >= 90) return 'bg-emerald-100 text-emerald-800';
+        if (score >= 80) return 'bg-blue-100 text-blue-800';
+        return 'bg-slate-100 text-slate-600';
+      }
+
+      function generationLabel(value) {
+        return GENERATION_META[value]?.label || value || '-';
+      }
+
+      function showToast(message) {
+        els.toast.textContent = message;
+        els.toast.classList.remove('hidden');
+        clearTimeout(showToast.timer);
+        showToast.timer = setTimeout(() => els.toast.classList.add('hidden'), 1800);
+      }
+
+      async function copyText(text, successMessage) {
+        try {
+          await navigator.clipboard.writeText(text);
+          showToast(successMessage);
+        } catch {
+          els.prompt?.focus();
+          showToast('복사에 실패했습니다. 텍스트를 직접 선택해 주세요.');
+        }
+      }
+
+      function buildPrompt(item) {
+        const generation = generationLabel(item.target_generation);
+        return `역할: 검색 유입에 강한 블로그 콘텐츠 기획자
+
+아래 조건을 반영해 블로그 제목과 3단 아웃라인을 작성해 주세요.
+
+- 핵심 키워드: ${item.keyword}
+- 타깃 세대: ${generation}
+- 카테고리: ${item.category || '일반'}
+- 목적: 해당 세대 독자가 클릭하고, 글을 끝까지 읽게 만드는 실용 정보성 포스팅
+
+작성 규칙:
+1) 키워드를 자연스럽게 포함한 제목 5개를 제안하세요.
+2) 가장 추천하는 제목 1개를 고르고, 아래 3단 아웃라인을 작성하세요.
+   - 도입: 독자의 고민/상황을 짚고 글의 가치를 한 줄로 제시
+   - 본문: 핵심 정보 3~5개와 바로 실행 가능한 팁
+   - 마무리: 요약 + 다음 행동(CTA)
+3) 말투는 ${generation} 타깃에 맞게 조정하세요.
+4) 결과는 바로 복사해 쓸 수 있게 간결하게 작성하세요.`;
+      }
+
+      function filteredItems() {
+        const q = state.query.trim().toLowerCase();
+        return state.items.filter((item) => {
+          if (state.generation && item.target_generation !== state.generation) return false;
+          if (state.portal && item.portal !== state.portal) return false;
+          if (Number(item.opportunity_score) < state.minScore) return false;
+          if (q) {
+            const hay = `${item.keyword} ${item.category || ''}`.toLowerCase();
+            if (!hay.includes(q)) return false;
+          }
+          return true;
+        });
+      }
+
+      function renderSummary() {
+        const items = state.items;
+        els.total.textContent = items.length.toLocaleString('ko-KR');
+
+        const counts = { naver: 0, daum: 0, google: 0 };
+        items.forEach((item) => {
+          if (counts[item.portal] != null) counts[item.portal] += 1;
+        });
+        els.portals.innerHTML = Object.entries(PORTAL_META)
+          .map(
+            ([portal, meta]) =>
+              `<span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${meta.className}">${meta.label} ${counts[portal]}</span>`,
+          )
+          .join('');
+
+        const top = items.reduce((max, item) => Math.max(max, Number(item.opportunity_score) || 0), 0);
+        els.topScore.textContent = items.length ? top.toFixed(0) : '-';
+
+        const latest = items
+          .map((item) => item.collected_date)
+          .filter(Boolean)
+          .sort()
+          .at(-1);
+        els.date.textContent = latest || '-';
+      }
+
+      function renderTabs() {
+        els.tabs.innerHTML = GENERATIONS.map((tab) => {
+          const active = state.generation === tab.id;
+          const cls = active
+            ? 'bg-slate-900 text-white'
+            : 'bg-slate-100 text-slate-600 hover:bg-slate-200';
+          return `<button type="button" data-generation="${tab.id}" class="rounded-full px-3.5 py-1.5 text-sm font-medium ${cls}">${tab.label}</button>`;
+        }).join('');
+      }
+
+      function renderTable() {
+        const rows = filteredItems();
+        els.tableCount.textContent = `${rows.length.toLocaleString('ko-KR')}건 표시`;
+        els.error.classList.add('hidden');
+
+        if (!rows.length) {
+          els.tbody.innerHTML = '';
+          els.empty.classList.remove('hidden');
+          return;
+        }
+
+        els.empty.classList.add('hidden');
+        els.tbody.innerHTML = rows
+          .map((item, index) => {
+            const portal = PORTAL_META[item.portal] || { label: item.portal, className: 'bg-slate-100 text-slate-700' };
+            const generation = GENERATION_META[item.target_generation] || {
+              label: item.target_generation,
+              className: 'bg-slate-100 text-slate-700',
+            };
+            const score = Number(item.opportunity_score) || 0;
+            const href = searchUrl(item.portal, item.keyword);
+            return `<tr class="hover:bg-slate-50">
+              <td class="px-4 py-3 whitespace-nowrap">
+                <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${portal.className}">${portal.label}</span>
+              </td>
+              <td class="px-4 py-3 min-w-[12rem]">
+                <a href="${href}" target="_blank" rel="noopener noreferrer" class="font-medium text-slate-900 hover:underline">${escapeHtml(item.keyword)}</a>
+              </td>
+              <td class="px-4 py-3 whitespace-nowrap">
+                <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${generation.className}">${generation.label}</span>
+              </td>
+              <td class="px-4 py-3 whitespace-nowrap text-slate-600">${escapeHtml(item.category || '일반')}</td>
+              <td class="px-4 py-3 whitespace-nowrap">
+                <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${scoreClass(score)}">${score.toFixed(0)}</span>
+              </td>
+              <td class="px-4 py-3 whitespace-nowrap">
+                <div class="flex flex-wrap gap-2">
+                  <button type="button" data-copy="${index}" class="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium hover:bg-slate-50">키워드 복사</button>
+                  <button type="button" data-prompt="${index}" class="rounded-lg bg-slate-900 text-white px-2.5 py-1.5 text-xs font-medium hover:bg-slate-800">글감 생성</button>
+                </div>
+              </td>
+            </tr>`;
+          })
+          .join('');
+
+        els.tbody.querySelectorAll('[data-copy]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const item = rows[Number(btn.dataset.copy)];
+            if (item) copyText(item.keyword, '키워드 복사 완료');
+          });
+        });
+        els.tbody.querySelectorAll('[data-prompt]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const item = rows[Number(btn.dataset.prompt)];
+            if (item) openModal(item);
+          });
+        });
+      }
+
+      function render() {
+        renderTabs();
+        renderSummary();
+        renderTable();
+      }
+
+      function openModal(item) {
+        els.prompt.value = buildPrompt(item);
+        els.modal.classList.remove('hidden');
+      }
+
+      function closeModal() {
+        els.modal.classList.add('hidden');
+      }
+
+      const VERCEL_API_ORIGIN = 'https://keyword-collector-lac.vercel.app';
+
+      function keywordsEndpoint() {
+        const origin = window.location.hostname.includes('github.io') ? VERCEL_API_ORIGIN : '';
+        return `${origin}/api/keywords?limit=1000`;
+      }
+
+      async function loadKeywords() {
+        els.tableCount.textContent = '불러오는 중...';
+        try {
+          const res = await fetch(keywordsEndpoint());
+          const data = await res.json();
+          if (!res.ok || !data.ok) {
+            throw new Error(data.error || `요청 실패 (${res.status})`);
+          }
+          state.items = Array.isArray(data.items) ? data.items : [];
+          render();
+        } catch (error) {
+          els.tbody.innerHTML = '';
+          els.empty.classList.add('hidden');
+          els.error.textContent = `데이터를 불러오지 못했습니다. ${error.message}`;
+          els.error.classList.remove('hidden');
+          els.tableCount.textContent = '불러오기 실패';
+        }
+      }
+
+      els.tabs.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-generation]');
+        if (!button) return;
+        state.generation = button.dataset.generation || '';
+        render();
+      });
+      els.portal.addEventListener('change', () => {
+        state.portal = els.portal.value;
+        render();
+      });
+      els.score.addEventListener('change', () => {
+        state.minScore = Number(els.score.value) || 0;
+        render();
+      });
+      els.search.addEventListener('input', () => {
+        state.query = els.search.value;
+        renderTable();
+      });
+      document.getElementById('modal-close').addEventListener('click', closeModal);
+      document.getElementById('modal-backdrop').addEventListener('click', closeModal);
+      document.getElementById('copy-prompt').addEventListener('click', () => {
+        copyText(els.prompt.value, '프롬프트 복사 완료');
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') closeModal();
+      });
+
+      loadKeywords();
+    </script>
+  </body>
+</html>

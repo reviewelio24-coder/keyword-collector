@@ -17,7 +17,7 @@ function parseLimit(raw: string | undefined): number {
   if (!Number.isFinite(parsed)) {
     return 20;
   }
-  return Math.min(100, Math.max(1, parsed));
+  return Math.min(1000, Math.max(1, parsed));
 }
 
 function parseMinScore(raw: string | undefined): number {
