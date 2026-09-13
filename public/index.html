@@ -64,7 +64,7 @@
 
       <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5 mb-4">
         <div id="generation-tabs" class="flex flex-wrap gap-2 mb-4"></div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
           <label class="block">
             <span class="text-xs font-medium text-slate-500">포털</span>
             <select
@@ -90,6 +90,20 @@
             </select>
           </label>
           <label class="block">
+            <span class="text-xs font-medium text-slate-500">정렬</span>
+            <select
+              id="sort-filter"
+              class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+            >
+              <option value="opportunity_score:desc">기회 점수 높은순</option>
+              <option value="opportunity_score:asc">기회 점수 낮은순</option>
+              <option value="keyword:asc">키워드 가나다순</option>
+              <option value="keyword:desc">키워드 역순</option>
+              <option value="collected_date:desc">최신 수집순</option>
+              <option value="collected_date:asc">오래된 수집순</option>
+            </select>
+          </label>
+          <label class="block">
             <span class="text-xs font-medium text-slate-500">키워드 / 카테고리 검색</span>
             <input
               id="search-input"
@@ -109,12 +123,25 @@
         <div class="overflow-x-auto">
           <table class="min-w-full text-sm">
             <thead class="bg-slate-50 text-slate-500 text-left">
-              <tr>
+              <tr id="keyword-thead-row">
                 <th class="px-4 py-3 font-medium whitespace-nowrap">포털</th>
-                <th class="px-4 py-3 font-medium">키워드</th>
+                <th class="px-4 py-3 font-medium">
+                  <button type="button" data-sort="keyword" class="inline-flex items-center gap-1 cursor-pointer hover:text-slate-900">
+                    키워드 <span data-sort-icon="keyword" class="text-xs">▼</span>
+                  </button>
+                </th>
                 <th class="px-4 py-3 font-medium whitespace-nowrap">타깃 세대</th>
                 <th class="px-4 py-3 font-medium whitespace-nowrap">카테고리</th>
-                <th class="px-4 py-3 font-medium whitespace-nowrap">기회 점수</th>
+                <th class="px-4 py-3 font-medium whitespace-nowrap">
+                  <button type="button" data-sort="opportunity_score" class="inline-flex items-center gap-1 cursor-pointer hover:text-slate-900">
+                    기회 점수 <span data-sort-icon="opportunity_score" class="text-xs">▼</span>
+                  </button>
+                </th>
+                <th class="px-4 py-3 font-medium whitespace-nowrap">
+                  <button type="button" data-sort="collected_date" class="inline-flex items-center gap-1 cursor-pointer hover:text-slate-900">
+                    수집일 <span data-sort-icon="collected_date" class="text-xs">▼</span>
+                  </button>
+                </th>
                 <th class="px-4 py-3 font-medium whitespace-nowrap">액션</th>
               </tr>
             </thead>
@@ -192,12 +219,15 @@
         portal: '',
         minScore: 0,
         query: '',
+        currentSortColumn: 'opportunity_score',
+        currentSortOrder: 'desc',
       };
 
       const els = {
         tabs: document.getElementById('generation-tabs'),
         portal: document.getElementById('portal-filter'),
         score: document.getElementById('score-filter'),
+        sort: document.getElementById('sort-filter'),
         search: document.getElementById('search-input'),
         date: document.getElementById('date-filter'),
         tbody: document.getElementById('keyword-tbody'),
@@ -276,6 +306,67 @@
 4) 결과는 바로 복사해 쓸 수 있게 간결하게 작성하세요.`;
       }
 
+      function sortKey(item, column) {
+        if (column === 'opportunity_score') {
+          return Number(item.opportunity_score) || 0;
+        }
+        if (column === 'collected_date') {
+          return String(item.collected_date || '');
+        }
+        return String(item.keyword || '');
+      }
+
+      function sortedItems(rows) {
+        const currentSortColumn = state.currentSortColumn;
+        const currentSortOrder = state.currentSortOrder;
+        return [...rows].sort((a, b) => {
+          const valA = sortKey(a, currentSortColumn);
+          const valB = sortKey(b, currentSortColumn);
+          if (typeof valA === 'string' || typeof valB === 'string') {
+            const compared = String(valA).localeCompare(String(valB), 'ko');
+            return currentSortOrder === 'asc' ? compared : -compared;
+          }
+          return currentSortOrder === 'asc' ? valA - valB : valB - valA;
+        });
+      }
+
+      function syncSortSelect() {
+        const value = `${state.currentSortColumn}:${state.currentSortOrder}`;
+        if (els.sort && [...els.sort.options].some((option) => option.value === value)) {
+          els.sort.value = value;
+        }
+      }
+
+      function renderSortIcons() {
+        document.querySelectorAll('[data-sort-icon]').forEach((icon) => {
+          const column = icon.getAttribute('data-sort-icon');
+          if (column !== state.currentSortColumn) {
+            icon.textContent = '↕';
+            icon.classList.add('text-slate-300');
+            return;
+          }
+          icon.classList.remove('text-slate-300');
+          icon.textContent = state.currentSortOrder === 'asc' ? '▲' : '▼';
+        });
+      }
+
+      function setSort(column, order) {
+        state.currentSortColumn = column;
+        state.currentSortOrder = order;
+        syncSortSelect();
+        renderSortIcons();
+        renderTable();
+      }
+
+      function toggleSort(column) {
+        if (state.currentSortColumn === column) {
+          setSort(column, state.currentSortOrder === 'asc' ? 'desc' : 'asc');
+          return;
+        }
+        const defaultOrder = column === 'keyword' ? 'asc' : 'desc';
+        setSort(column, defaultOrder);
+      }
+
       function filteredItems() {
         const q = state.query.trim().toLowerCase();
         return state.items.filter((item) => {
@@ -337,7 +428,7 @@
       }
 
       function renderTable() {
-        const rows = filteredItems();
+        const rows = sortedItems(filteredItems());
         els.tableCount.textContent = `${rows.length.toLocaleString('ko-KR')}건 표시`;
         els.error.classList.add('hidden');
 
@@ -371,6 +462,7 @@
               <td class="px-4 py-3 whitespace-nowrap">
                 <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${scoreClass(score)}">${score.toFixed(0)}</span>
               </td>
+              <td class="px-4 py-3 whitespace-nowrap text-slate-600">${escapeHtml(item.collected_date || '-')}</td>
               <td class="px-4 py-3 whitespace-nowrap">
                 <div class="flex flex-wrap gap-2">
                   <button type="button" data-copy="${index}" class="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium hover:bg-slate-50">키워드 복사</button>
@@ -399,6 +491,8 @@
         renderTabs();
         renderDateOptions();
         renderSummary();
+        syncSortSelect();
+        renderSortIcons();
         renderTable();
       }
 
@@ -449,6 +543,15 @@
       els.score.addEventListener('change', () => {
         state.minScore = Number(els.score.value) || 0;
         render();
+      });
+      els.sort.addEventListener('change', () => {
+        const [column, order] = els.sort.value.split(':');
+        setSort(column || 'opportunity_score', order === 'asc' ? 'asc' : 'desc');
+      });
+      document.querySelectorAll('[data-sort]').forEach((button) => {
+        button.addEventListener('click', () => {
+          toggleSort(button.getAttribute('data-sort'));
+        });
       });
       els.date.addEventListener('change', () => {
         state.date = els.date.value;
