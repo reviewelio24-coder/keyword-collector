@@ -162,10 +162,11 @@
     <script>
       const GENERATIONS = [
         { id: '', label: '전체' },
-        { id: '10s', label: '10s' },
+        { id: '10s', label: '10대' },
         { id: '2030', label: '2030' },
-        { id: '4050', label: '4050' },
-        { id: '60s+', label: '60s+' },
+        { id: '40s', label: '40대' },
+        { id: '50s', label: '50대' },
+        { id: '60s+', label: '60대+' },
       ];
 
       const PORTAL_META = {
@@ -175,10 +176,12 @@
       };
 
       const GENERATION_META = {
-        '10s': { label: '10s', className: 'bg-violet-100 text-violet-800' },
+        '10s': { label: '10대', className: 'bg-violet-100 text-violet-800' },
         '2030': { label: '2030', className: 'bg-sky-100 text-sky-800' },
-        '4050': { label: '4050', className: 'bg-amber-100 text-amber-800' },
-        '60s+': { label: '60s+', className: 'bg-rose-100 text-rose-800' },
+        '40s': { label: '40대', className: 'bg-amber-100 text-amber-800' },
+        '50s': { label: '50대', className: 'bg-orange-100 text-orange-800' },
+        '60s+': { label: '60대+', className: 'bg-rose-100 text-rose-800' },
+        '4050': { label: '40·50대', className: 'bg-yellow-100 text-yellow-800' },
       };
 
       const state = {
@@ -276,7 +279,12 @@
       function filteredItems() {
         const q = state.query.trim().toLowerCase();
         return state.items.filter((item) => {
-          if (state.generation && item.target_generation !== state.generation) return false;
+          if (state.generation) {
+            const matched =
+              item.target_generation === state.generation ||
+              ((state.generation === '40s' || state.generation === '50s') && item.target_generation === '4050');
+            if (!matched) return false;
+          }
           if (state.portal && item.portal !== state.portal) return false;
           if (Number(item.opportunity_score) < state.minScore) return false;
           if (q) {

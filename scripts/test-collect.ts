@@ -96,6 +96,24 @@ async function main(): Promise<void> {
     })),
   );
 
+  console.log('\n[세대별 수량]');
+  const generationOrder = ['10s', '2030', '40s', '50s', '60s+'] as const;
+  const generationCounts = Object.fromEntries(generationOrder.map((key) => [key, 0])) as Record<
+    (typeof generationOrder)[number],
+    number
+  >;
+  for (const row of result.uniqueRows) {
+    if (row.target_generation in generationCounts) {
+      generationCounts[row.target_generation as (typeof generationOrder)[number]] += 1;
+    }
+  }
+  console.table(
+    generationOrder.map((generation) => ({
+      generation,
+      count: generationCounts[generation],
+    })),
+  );
+
   console.log('\n[상위 기회 점수 키워드 5개 — 적재 직후 메모리]');
   console.table(topScoreRows(result.uniqueRows));
 
@@ -110,6 +128,11 @@ async function main(): Promise<void> {
 
   if (failedPortals.length === result.portals.length) {
     console.error('[test:collect] 모든 포털 수집이 실패했습니다.');
+    process.exit(1);
+  }
+
+  if (generationCounts['40s'] === 0 || generationCounts['50s'] === 0) {
+    console.error('[test:collect] 40s/50s 분류 적재가 비어 있습니다.');
     process.exit(1);
   }
 

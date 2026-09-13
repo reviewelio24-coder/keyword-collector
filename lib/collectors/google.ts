@@ -13,7 +13,7 @@ const BROWSER_HEADERS = {
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
 };
 
-/** 구글: 10대~30대 신기술·생산성·글로벌 트렌드 중심 */
+/** 구글: 10s~2030 생산성 + 40s/50s 관심 시드 */
 const GOOGLE_SEEDS: SeedKeyword[] = [
   { seed: '수능 공부법', targetGeneration: '10s', category: '교육' },
   { seed: '코딩 배우기', targetGeneration: '10s', category: 'IT' },
@@ -27,9 +27,14 @@ const GOOGLE_SEEDS: SeedKeyword[] = [
   { seed: '리모트 워크', targetGeneration: '2030', category: '직장' },
   { seed: '영어 공부', targetGeneration: '2030', category: '교육' },
   { seed: '디지털 노마드', targetGeneration: '2030', category: '라이프' },
-  { seed: '은퇴 설계', targetGeneration: '4050', category: '재테크' },
-  { seed: '건강 관리', targetGeneration: '4050', category: '건강' },
-  { seed: '유튜브 시작', targetGeneration: '4050', category: '취미' },
+  { seed: '자녀 교육', targetGeneration: '40s', category: '교육' },
+  { seed: '부동산 투자', targetGeneration: '40s', category: '재테크' },
+  { seed: '건강검진', targetGeneration: '40s', category: '건강' },
+  { seed: '이직 40대', targetGeneration: '40s', category: '직장' },
+  { seed: '은퇴 설계', targetGeneration: '50s', category: '재테크' },
+  { seed: '국민연금', targetGeneration: '50s', category: '재테크' },
+  { seed: '재취업', targetGeneration: '50s', category: '직장' },
+  { seed: '갱년기', targetGeneration: '50s', category: '건강' },
   { seed: '스마트폰 사용법', targetGeneration: '60s+', category: 'IT' },
   { seed: '유튜브 보는 법', targetGeneration: '60s+', category: 'IT' },
   { seed: '건강 정보', targetGeneration: '60s+', category: '건강' },

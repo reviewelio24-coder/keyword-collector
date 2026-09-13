@@ -1,8 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getSupabaseAdmin } from '../lib/supabase';
-import type { Portal, TargetGeneration } from '../types/keyword';
+import type { Portal } from '../types/keyword';
 
-const GENERATIONS = new Set<TargetGeneration>(['10s', '2030', '4050', '60s+']);
+const GENERATIONS = new Set(['10s', '2030', '40s', '50s', '60s+', '4050']);
+const GENERATION_40_50 = ['40s', '50s', '4050'] as const;
 const PORTALS = new Set<Portal>(['naver', 'daum', 'google']);
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -85,7 +86,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return;
   }
 
-  if (generationRaw && !GENERATIONS.has(generationRaw as TargetGeneration)) {
+  if (generationRaw && !GENERATIONS.has(generationRaw)) {
     res.status(400).json({
       ok: false,
       error: `Invalid generation. Use one of: ${[...GENERATIONS].join(', ')}`,
@@ -124,7 +125,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       query = query.eq('collected_date', date);
     }
 
-    if (generationRaw) {
+    if (generationRaw === '4050') {
+      query = query.in('target_generation', [...GENERATION_40_50]);
+    } else if (generationRaw) {
       query = query.eq('target_generation', generationRaw);
     }
 

@@ -1,5 +1,5 @@
 import { createHash } from 'crypto';
-import type { CollectedKeyword, CompetitionIdx, KeywordMaster, Portal } from '../types/keyword';
+import type { CollectedKeyword, CompetitionIdx, GenerationType, KeywordMaster, Portal } from '../types/keyword';
 
 const COMPETITION_PENALTY: Record<CompetitionIdx, number> = {
   LOW: 0,
@@ -51,6 +51,51 @@ export function calculateOpportunityScore(params: {
   return clampScore(score);
 }
 
+const FIFTY_PATTERNS = [
+  /은퇴/,
+  /퇴직/,
+  /국민연금/,
+  /임금피크/,
+  /재취업/,
+  /암보험/,
+  /오십견/,
+  /갱년기/,
+  /노후/,
+  /명퇴/,
+];
+
+const FORTY_PATTERNS = [
+  /부동산/,
+  /대출/,
+  /내\s?집/,
+  /자녀/,
+  /학원/,
+  /건강검진/,
+  /중년/,
+  /연봉\s?협상/,
+  /다이어트/,
+];
+
+/** 40s/50s 시드에서 키워드 텍스트로 세대를 재분류. 그 외 세대는 시드 태그를 유지 */
+export function inferTargetGeneration(keyword: string, fallback: GenerationType): GenerationType {
+  if (fallback !== '40s' && fallback !== '50s') {
+    return fallback;
+  }
+
+  const text = keyword.normalize('NFC');
+  const looksFifty = FIFTY_PATTERNS.some((pattern) => pattern.test(text));
+  const looksForty = FORTY_PATTERNS.some((pattern) => pattern.test(text));
+
+  if (looksFifty) {
+    return '50s';
+  }
+  if (looksForty) {
+    return '40s';
+  }
+
+  return fallback;
+}
+
 export function toKeywordMaster(item: CollectedKeyword, collectedDate: string): KeywordMaster | null {
   const keyword = normalizeKeyword(item.keyword);
   if (keyword.length < 2) {
@@ -64,7 +109,7 @@ export function toKeywordMaster(item: CollectedKeyword, collectedDate: string): 
     keyword_id: buildKeywordId(item.portal, keyword),
     keyword,
     portal: item.portal,
-    target_generation: item.targetGeneration,
+    target_generation: inferTargetGeneration(keyword, item.targetGeneration),
     category: item.category || '일반',
     monthly_vol: monthlyVol,
     competition_idx: competitionIdx,

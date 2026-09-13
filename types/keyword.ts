@@ -1,6 +1,8 @@
 export type Portal = 'naver' | 'daum' | 'google';
 
-export type TargetGeneration = '10s' | '2030' | '4050' | '60s+';
+/** 타깃 세대 (5그룹). 구버전 `4050`은 API에서 40s+50s 하위 호환 */
+export type GenerationType = '10s' | '2030' | '40s' | '50s' | '60s+';
+export type TargetGeneration = GenerationType;
 
 export type CompetitionIdx = 'LOW' | 'MID' | 'HIGH';
 

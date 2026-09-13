@@ -12,7 +12,7 @@ const BROWSER_HEADERS: Record<string, string> = {
   'User-Agent': BROWSER_UA,
 };
 
-/** 네이버: 2030 직장·IT 트렌드 중심, 전 세대 시드 포함 */
+/** 네이버: 2030 직장·IT + 40s/50s 관심사 시드 */
 const NAVER_SEEDS: SeedKeyword[] = [
   { seed: '수능', targetGeneration: '10s', category: '교육' },
   { seed: '입시', targetGeneration: '10s', category: '교육' },
@@ -26,12 +26,22 @@ const NAVER_SEEDS: SeedKeyword[] = [
   { seed: '인공지능', targetGeneration: '2030', category: 'IT' },
   { seed: '재테크', targetGeneration: '2030', category: '재테크' },
   { seed: '주식', targetGeneration: '2030', category: '재테크' },
-  { seed: '부동산', targetGeneration: '2030', category: '재테크' },
   { seed: '워케이션', targetGeneration: '2030', category: '직장' },
-  { seed: '명퇴', targetGeneration: '4050', category: '직장' },
-  { seed: '자녀교육', targetGeneration: '4050', category: '교육' },
-  { seed: '건강검진', targetGeneration: '4050', category: '건강' },
-  { seed: '중년 취미', targetGeneration: '4050', category: '취미' },
+  { seed: '부동산', targetGeneration: '40s', category: '재테크' },
+  { seed: '대출', targetGeneration: '40s', category: '재테크' },
+  { seed: '내 집 마련', targetGeneration: '40s', category: '재테크' },
+  { seed: '자녀 학원', targetGeneration: '40s', category: '교육' },
+  { seed: '건강검진', targetGeneration: '40s', category: '건강' },
+  { seed: '중년 다이어트', targetGeneration: '40s', category: '건강' },
+  { seed: '연봉 협상', targetGeneration: '40s', category: '직장' },
+  { seed: '은퇴 준비', targetGeneration: '50s', category: '라이프' },
+  { seed: '퇴직금', targetGeneration: '50s', category: '재테크' },
+  { seed: '국민연금', targetGeneration: '50s', category: '재테크' },
+  { seed: '임금피크제', targetGeneration: '50s', category: '직장' },
+  { seed: '재취업', targetGeneration: '50s', category: '직장' },
+  { seed: '암보험', targetGeneration: '50s', category: '건강' },
+  { seed: '오십견', targetGeneration: '50s', category: '건강' },
+  { seed: '갱년기', targetGeneration: '50s', category: '건강' },
   { seed: '연금', targetGeneration: '60s+', category: '재테크' },
   { seed: '은퇴', targetGeneration: '60s+', category: '라이프' },
   { seed: '건강식품', targetGeneration: '60s+', category: '건강' },
