@@ -1,0 +1,27 @@
+{
+  "name": "keyword-collector",
+  "version": "1.0.0",
+  "private": true,
+  "description": "포털 3사(네이버·다음·구글) 세대별 키워드 자동 수집 파이프라인",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "vercel dev",
+    "typecheck": "tsc --noEmit",
+    "db:setup": "ts-node scripts/setup-db.ts",
+    "test:collect": "ts-node scripts/test-collect.ts",
+    "verify": "npm run db:setup && npm run test:collect"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.57.4",
+    "@vercel/node": "^5.3.24",
+    "dotenv": "^16.6.1",
+    "postgres": "^3.4.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  }
+}
