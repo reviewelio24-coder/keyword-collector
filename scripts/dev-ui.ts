@@ -19,12 +19,43 @@ function send(res: ServerResponse, status: number, body: string, contentType: st
 
 async function handleKeywords(reqUrl: URL, res: ServerResponse): Promise<void> {
   const supabase = getSupabaseAdmin();
+  const type = reqUrl.searchParams.get('type');
+  const dateRaw = reqUrl.searchParams.get('date');
   const limitRaw = Number.parseInt(reqUrl.searchParams.get('limit') || '20', 10);
   const limit = Number.isFinite(limitRaw) ? Math.min(1000, Math.max(1, limitRaw)) : 20;
   const minScore = Number.parseFloat(reqUrl.searchParams.get('min_score') || '0') || 0;
   const generation = reqUrl.searchParams.get('generation');
   const portal = reqUrl.searchParams.get('portal');
 
+  const { data: dateRows, error: dateError } = await supabase
+    .from('keywords_master')
+    .select('collected_date')
+    .order('collected_date', { ascending: false });
+
+  if (dateError) {
+    send(res, 500, JSON.stringify({ ok: false, error: dateError.message }), 'application/json; charset=utf-8');
+    return;
+  }
+
+  const dates = [
+    ...new Set(
+      (dateRows ?? [])
+        .map((row) => (typeof row.collected_date === 'string' ? row.collected_date.slice(0, 10) : ''))
+        .filter(Boolean),
+    ),
+  ];
+
+  if (type === 'dates') {
+    send(
+      res,
+      200,
+      JSON.stringify({ ok: true, dates, latest: dates[0] ?? null }),
+      'application/json; charset=utf-8',
+    );
+    return;
+  }
+
+  const date = dateRaw || dates[0];
   let query = supabase
     .from('keywords_master')
     .select(
@@ -34,6 +65,9 @@ async function handleKeywords(reqUrl: URL, res: ServerResponse): Promise<void> {
     .order('opportunity_score', { ascending: false })
     .limit(limit);
 
+  if (date) {
+    query = query.eq('collected_date', date);
+  }
   if (generation) {
     query = query.eq('target_generation', generation);
   }
@@ -53,6 +87,8 @@ async function handleKeywords(reqUrl: URL, res: ServerResponse): Promise<void> {
     JSON.stringify({
       ok: true,
       count: data?.length ?? 0,
+      dates,
+      filters: { date: date ?? null },
       items: data ?? [],
     }),
     'application/json; charset=utf-8',

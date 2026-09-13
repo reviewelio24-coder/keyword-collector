@@ -52,8 +52,13 @@
           <p id="stat-top-score" class="text-3xl font-bold mt-2">-</p>
         </article>
         <article class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-          <p class="text-sm text-slate-500">최근 수집 일자</p>
-          <p id="stat-date" class="text-3xl font-bold mt-2 tracking-tight">-</p>
+          <label for="date-filter" class="text-sm text-slate-500">수집 일자</label>
+          <select
+            id="date-filter"
+            class="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-lg font-bold tracking-tight focus:outline-none focus:ring-2 focus:ring-slate-900"
+          >
+            <option value="">불러오는 중...</option>
+          </select>
         </article>
       </section>
 
@@ -178,6 +183,8 @@
 
       const state = {
         items: [],
+        dates: [],
+        date: '',
         generation: '',
         portal: '',
         minScore: 0,
@@ -189,6 +196,7 @@
         portal: document.getElementById('portal-filter'),
         score: document.getElementById('score-filter'),
         search: document.getElementById('search-input'),
+        date: document.getElementById('date-filter'),
         tbody: document.getElementById('keyword-tbody'),
         empty: document.getElementById('empty-state'),
         error: document.getElementById('error-state'),
@@ -196,7 +204,6 @@
         total: document.getElementById('stat-total'),
         portals: document.getElementById('stat-portals'),
         topScore: document.getElementById('stat-top-score'),
-        date: document.getElementById('stat-date'),
         toast: document.getElementById('toast'),
         modal: document.getElementById('modal'),
         prompt: document.getElementById('prompt-text'),
@@ -297,13 +304,18 @@
 
         const top = items.reduce((max, item) => Math.max(max, Number(item.opportunity_score) || 0), 0);
         els.topScore.textContent = items.length ? top.toFixed(0) : '-';
+      }
 
-        const latest = items
-          .map((item) => item.collected_date)
-          .filter(Boolean)
-          .sort()
-          .at(-1);
-        els.date.textContent = latest || '-';
+      function renderDateOptions() {
+        if (!state.dates.length) {
+          els.date.innerHTML = '<option value="">수집 일자 없음</option>';
+          return;
+        }
+
+        els.date.innerHTML = state.dates
+          .map((date) => `<option value="${escapeHtml(date)}">${escapeHtml(date)}</option>`)
+          .join('');
+        els.date.value = state.date || state.dates[0];
       }
 
       function renderTabs() {
@@ -377,6 +389,7 @@
 
       function render() {
         renderTabs();
+        renderDateOptions();
         renderSummary();
         renderTable();
       }
@@ -390,15 +403,21 @@
         els.modal.classList.add('hidden');
       }
 
-      async function loadKeywords() {
+      async function loadKeywords(date) {
         els.tableCount.textContent = '불러오는 중...';
         try {
-          const res = await fetch('/api/keywords?limit=1000');
+          const params = new URLSearchParams({ limit: '1000' });
+          if (date) {
+            params.set('date', date);
+          }
+          const res = await fetch(`/api/keywords?${params.toString()}`);
           const data = await res.json();
           if (!res.ok || !data.ok) {
             throw new Error(data.error || `요청 실패 (${res.status})`);
           }
           state.items = Array.isArray(data.items) ? data.items : [];
+          state.dates = Array.isArray(data.dates) ? data.dates : [];
+          state.date = data.filters?.date || date || state.dates[0] || '';
           render();
         } catch (error) {
           els.tbody.innerHTML = '';
@@ -422,6 +441,10 @@
       els.score.addEventListener('change', () => {
         state.minScore = Number(els.score.value) || 0;
         render();
+      });
+      els.date.addEventListener('change', () => {
+        state.date = els.date.value;
+        loadKeywords(state.date);
       });
       els.search.addEventListener('input', () => {
         state.query = els.search.value;
