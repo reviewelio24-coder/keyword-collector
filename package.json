@@ -11,8 +11,7 @@
     "typecheck": "tsc --noEmit",
     "db:setup": "ts-node scripts/setup-db.ts",
     "test:collect": "ts-node scripts/test-collect.ts",
-    "verify": "npm run db:setup && npm run test:collect",
-    "deploy:pages": "gh-pages -d public"
+    "verify": "npm run db:setup && npm run test:collect"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
@@ -22,7 +21,6 @@
   },
   "devDependencies": {
     "@types/node": "^22.18.1",
-    "gh-pages": "^6.3.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2"
   }

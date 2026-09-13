@@ -390,17 +390,10 @@
         els.modal.classList.add('hidden');
       }
 
-      const VERCEL_API_ORIGIN = 'https://keyword-collector-lac.vercel.app';
-
-      function keywordsEndpoint() {
-        const origin = window.location.hostname.includes('github.io') ? VERCEL_API_ORIGIN : '';
-        return `${origin}/api/keywords?limit=1000`;
-      }
-
       async function loadKeywords() {
         els.tableCount.textContent = '불러오는 중...';
         try {
-          const res = await fetch(keywordsEndpoint());
+          const res = await fetch('/api/keywords?limit=1000');
           const data = await res.json();
           if (!res.ok || !data.ok) {
             throw new Error(data.error || `요청 실패 (${res.status})`);
